@@ -380,16 +380,13 @@ LidarLiteI2C::collect()
 	}
 
 	uint8_t ll40ls_signal_strength = val[0];
-
-	uint8_t signal_min = 0;
-	uint8_t signal_max = 0;
-	uint8_t signal_value = 0;
+	uint8_t signal_quality;
 
 	// We detect if V3HP is being used
 	if (_is_v3hp) {
-		signal_min = LL40LS_SIGNAL_STRENGTH_MIN_V3HP;
-		signal_max = LL40LS_SIGNAL_STRENGTH_MAX_V3HP;
-		signal_value = ll40ls_signal_strength;
+		//Normalize signal strength to 0...100 percent using the absolute signal strength.
+		signal_quality = 100 * math::max(ll40ls_signal_strength - LL40LS_SIGNAL_STRENGTH_MIN_V3HP, 0) /
+				 (LL40LS_SIGNAL_STRENGTH_MAX_V3HP - LL40LS_SIGNAL_STRENGTH_MIN_V3HP);
 
 	} else {
 		// Absolute peak strength measurement, i.e. absolute strength of main signal peak.
@@ -422,29 +419,17 @@ LidarLiteI2C::collect()
 		}
 
 		uint8_t ll40ls_peak_strength = val[0];
-		signal_min = LL40LS_PEAK_STRENGTH_LOW;
-		signal_max = LL40LS_PEAK_STRENGTH_HIGH;
 
 		// For v2 and v3 use ll40ls_signal_strength (a relative measure, i.e. peak strength to noise!) to reject potentially ambiguous measurements
-		if (ll40ls_signal_strength <= LL40LS_SIGNAL_STRENGTH_LOW) {
-			signal_value = 0;
+		if (distance_m < LL40LS_MIN_DISTANCE) {
+			signal_quality = 0;
 
 		} else {
-			signal_value = ll40ls_peak_strength;
+			//Normalize signal strength to 0...100 percent using the absolute signal peak strength.
+			signal_quality = 100 * math::max(ll40ls_peak_strength - LL40LS_PEAK_STRENGTH_LOW, 0) /
+					 (LL40LS_PEAK_STRENGTH_HIGH - LL40LS_PEAK_STRENGTH_LOW);
+
 		}
-	}
-
-	uint8_t signal_quality;
-
-	if (!_is_v3hp && distance_m < LL40LS_MIN_DISTANCE) {
-		//for Lidar lites that are not v3hp we need to filter physically impossible measurements, which removes some crazy outliers that appear on LL40LS.
-		signal_quality = 0;
-
-	} else {
-		//Final data quality evaluation. This is based on the datasheet and simple heuristics retrieved from experiments
-		//Normalize signal strength to 0...100 percent using the absolute signal peak strength.
-		signal_quality = 100 * math::max(signal_value - signal_min, 0) / (signal_max - signal_min);
-
 	}
 
 	_px4_rangefinder.update(timestamp_sample, distance_m, signal_quality);
