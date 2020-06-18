@@ -115,7 +115,8 @@ CFLAGS = $(ARCHINCLUDES) \
 	-Wno-nonnull-compare \
 	-Wno-old-style-declaration \
 	-Wno-sign-compare \
-	-Wno-type-limits
+	-Wno-type-limits \
+	-Wno-stringop-truncation
 
 CXXFLAGS = $(ARCHXXINCLUDES) \
 	-std=c++14 \
