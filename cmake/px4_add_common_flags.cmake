@@ -89,6 +89,8 @@ function(px4_add_common_flags)
 		-Wno-missing-field-initializers
 		-Wno-missing-include-dirs # TODO: fix and enable
 		-Wno-unused-parameter
+		-Wno-stringop-truncation
+
 		)
 
 	# compiler specific flags
